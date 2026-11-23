@@ -1,0 +1,42 @@
+{
+  "name": "@comnipl/miloa-plugin-contract",
+  "version": "0.1.0",
+  "description": "Data and protocol types for miloa plugins",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "api-report": "pnpm run build && api-extractor run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@microsoft/api-extractor": "^7.60.0",
+    "@typescript/native": "npm:typescript@~7.0.0",
+    "eslint": "^10.2.1",
+    "tsdown": "^0.23.0",
+    "typescript": "npm:@typescript/typescript6@~6.0.0",
+    "typescript-eslint": "^8.58.1"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/comnipl/miloa-plugin-sdk.git",
+    "directory": "packages/plugin-contract"
+  }
+}

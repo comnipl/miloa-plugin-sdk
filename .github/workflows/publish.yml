@@ -1,0 +1,57 @@
+name: Publish Plugin SDK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-plugin-sdk
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
+      - name: Install dependencies
+        run: |
+          npm_version=$(npm --version)
+          printf '%s\n' 11.15.0 "$npm_version" | sort -CV || { echo "Staged publishing needs npm 11.15.0 or later, found $npm_version" >&2; exit 1; }
+          pnpm install --no-frozen-lockfile
+      - name: Stage and tag each package
+        shell: bash
+        run: |
+          published() {
+            local found
+            found=$(npm view "$1@$2" version --prefer-online --fetch-retries=0 --fetch-timeout=5000) && [[ "$found" == "$2" ]]
+          }
+
+          # A staged version stays invisible to npm view until a maintainer approves it, and
+          # npm stage list needs 2FA, so the version tag is what records that a version was staged.
+          for package in plugin-contract plugin-sdk; do
+            cd "packages/$package"
+            name=$(node -p "require('./package.json').name")
+            version=$(node -p "require('./package.json').version")
+            tag="$package@$version"
+
+            if ! published "$name" "$version" && ! git show-ref --verify --quiet "refs/tags/$tag"; then
+              pnpm pack
+              npm stage publish ./*.tgz --access public | tee -a "$GITHUB_STEP_SUMMARY"
+              git tag "$tag"
+              git push origin "refs/tags/$tag"
+            fi
+
+            cd ../..
+          done

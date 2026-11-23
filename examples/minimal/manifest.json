@@ -1,0 +1,12 @@
+{
+  "manifest_version": 1,
+  "id": "miloa-minimal",
+  "name": "Tag count",
+  "version": "1.0.0",
+  "view": {
+    "name": "Tag count"
+  },
+  "permissions": {
+    "api": ["tags:read"]
+  }
+}

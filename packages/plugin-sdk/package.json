@@ -1,0 +1,94 @@
+{
+  "name": "@comnipl/miloa-plugin-sdk",
+  "version": "0.1.0",
+  "description": "SDK for building miloa view plugins that run inside a sandboxed iframe",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react.tsx",
+    "./testing": "./src/testing/contractHost.ts",
+    "./vite": "./src/build/vite.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "api-report": "pnpm --filter @comnipl/miloa-plugin-contract build && pnpm run build && sh -c 'for config in api-extractor.*.json; do api-extractor run --config \"$config\" \"$@\" || exit 1; done' --"
+  },
+  "dependencies": {
+    "@comnipl/miloa-plugin-contract": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@microsoft/api-extractor": "^7.60.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@typescript/native": "npm:typescript@~7.0.0",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.0.0",
+    "jsdom": "^30.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsdown": "^0.23.0",
+    "typescript": "npm:@typescript/typescript6@~6.0.0",
+    "typescript-eslint": "^8.58.1",
+    "vite": "8.2.1",
+    "vitest": "^4.1.2"
+  },
+  "license": "Apache-2.0",
+  "bin": {
+    "miloa-plugin": "./src/build/dev.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./react": {
+        "types": "./dist/react.d.ts",
+        "import": "./dist/react.js"
+      },
+      "./testing": {
+        "types": "./dist/testing.d.ts",
+        "import": "./dist/testing.js"
+      },
+      "./vite": {
+        "types": "./dist/build/vite.d.ts",
+        "import": "./dist/build/vite.js"
+      }
+    },
+    "bin": {
+      "miloa-plugin": "./dist/build/dev.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/comnipl/miloa-plugin-sdk.git",
+    "directory": "packages/plugin-sdk"
+  }
+}
