@@ -24,23 +24,23 @@ export interface ProtocolVersion {
 }
 
 /**
- * `entries.search` の 1 ページの最大件数。ページはこれより少ない件数や
- * 0 件でも `next_cursor` を持ちうるので、続きの有無は `next_cursor` だけで判断する。
+ * Maximum number of entries in one `entries.search` page. A page can have fewer entries,
+ * or none, and still have a `next_cursor`, so use only `next_cursor` to decide whether more pages follow.
  */
 export const ENTRY_SEARCH_PAGE_SIZE = 500;
 
-/** 1 つの frame (MessagePort) が同時に持てる待ち受けの数。 */
+/** Maximum number of watches that one frame (MessagePort) can hold at the same time. */
 export const MAX_WATCHES_PER_FRAME = 64;
 
-/** 1 つの待ち受けの `tag_ids` に指定できるタグの数。 */
+/** Maximum number of tags that one watch can list in `tag_ids`. */
 export const MAX_WATCH_TAG_IDS = 256;
 
 export type PluginTheme = 'dark' | 'light';
 
-/** frame の用途。`view` は View 本体、`settings` は View 設定ペイン内の設定 UI。 */
+/** What the frame is for. `view` is the view itself; `settings` is the settings UI in the view settings pane. */
 export type PluginFrameMode = 'view' | 'settings';
 
-/** インストール時にユーザーが承認した権限。 */
+/** Permissions that the user approved at install time. */
 export interface GrantedPermissions {
   api: PluginApiScope[];
 }
@@ -67,12 +67,12 @@ export interface InitMessage {
 export interface InitPayload {
   protocol_version: ProtocolVersion;
   plugin_id: string;
-  /** settings モードで View が未保存の場合などは null。 */
+  /** `null` when, for example, the view is not saved yet in settings mode. */
   view_id: string | null;
   mode: PluginFrameMode;
-  /** View に保存されたプラグイン設定 (opaque)。 */
+  /** Plugin settings saved on the view (opaque). */
   config: unknown;
-  /** View に保存された検索条件。 */
+  /** Search criteria saved on the view. */
   base_filter: FilterNode | null;
   base_sort: EntrySort | null;
   theme: PluginTheme;
@@ -101,20 +101,20 @@ export interface UiOpenEntryParams {
 }
 
 export interface UiPrintParams {
-  /** 印刷対象ルート要素の outerHTML。 */
+  /** `outerHTML` of the root element to print. */
   html: string;
-  /** frame で適用中のスタイルシートを直列化した CSS テキスト。`@page` もそのまま効く。 */
+  /** CSS text serialized from the style sheets active in the frame. `@page` rules apply as is. */
   css: string;
-  /** 印刷ジョブの表題。PDF 保存時の既定ファイル名などに使われる。 */
+  /** Title of the print job. Used, for example, as the default file name when saving as PDF. */
   title?: string;
 }
 
-/** 設定画面で保存するときに使う View のドラフト設定。 */
+/** Draft view config that the settings screen uses when it saves. */
 export interface ViewSetDraftConfigParams {
   config: unknown;
 }
 
-/** 設定画面に表示するコンテンツの高さ (CSS ピクセル)。 */
+/** Height of the content to show in the settings screen, in CSS pixels. */
 export interface ViewSetContentHeightParams {
   height: number;
 }
@@ -161,9 +161,9 @@ export const PLUGIN_RPC_METHODS = [
 ] as const satisfies readonly PluginRpcMethod[];
 
 /**
- * メソッド呼び出しに必要な権限。
- * scope は `granted_permissions.api` に含まれている必要がある。
- * `null` は権限不要。
+ * Permission that a method call requires.
+ * The scope must be in `granted_permissions.api`.
+ * `null` means no permission is required.
  */
 export const METHOD_SCOPES: Record<PluginRpcMethod, PluginApiScope | null> = {
   'entries.search': 'entries:read',
@@ -188,14 +188,14 @@ export const RPC_ERROR_CODES = {
   unknownMethod: 'unknown_method',
   apiError: 'api_error',
   internal: 'internal',
-  /** SDK が、ホストの知らない機能を使う前に返す。 */
+  /** Returned by the SDK before it uses a feature that the host does not know. */
   hostOutdated: 'host_outdated',
 } as const;
 
 export type RpcErrorCode = (typeof RPC_ERROR_CODES)[keyof typeof RPC_ERROR_CODES];
 
 export interface RpcErrorShape {
-  /** 既知の値は `RpcErrorCode`。将来のコード追加に備え受信側は string として扱う。 */
+  /** Known values are `RpcErrorCode`. Receivers treat it as a string, because more codes may be added. */
   code: string;
   message: string;
 }
@@ -227,9 +227,9 @@ export interface RpcErrorResponse {
 export type RpcResponse = RpcSuccessResponse | RpcErrorResponse;
 
 export interface PluginHostEventPayloads {
-  /** `entry_ids: null` はどのエントリが変わったか不明で、読み直しが必要。 */
+  /** `entry_ids: null` means it is unknown which entries changed, so read them again. */
   'watch_changed': { watch_id: string; entry_ids: readonly string[] | null };
-  /** `tag_ids: null` は再同期時にどのタグが変わったか分からないことを表す。 */
+  /** `tag_ids: null` means it is unknown which tags changed during a resync. */
   'tags_changed': { tag_ids: readonly string[] | null };
   'theme_changed': { theme: PluginTheme };
   'config_changed': { config: unknown };
@@ -244,7 +244,7 @@ export const PLUGIN_HOST_EVENT_NAMES = [
   'config_changed',
 ] as const satisfies readonly PluginHostEventName[];
 
-/** イベントを受信するために必要な権限。`null` は権限不要。 */
+/** Permission required to receive the event. `null` means no permission is required. */
 export const EVENT_SCOPES: Record<PluginHostEventName, PluginApiScope | null> = {
   'watch_changed': 'entries:read',
   'tags_changed': 'tags:read',
@@ -252,7 +252,7 @@ export const EVENT_SCOPES: Record<PluginHostEventName, PluginApiScope | null> = 
   'config_changed': null,
 };
 
-/** 機能が入った minor。要求の任意のフィールドは `method:path.to.field` で指定する。 */
+/** Minor version that added each feature. Name an optional request field as `method:path.to.field`. */
 export const PROTOCOL_FEATURES = {
   'entries.search': 0,
   'entries.get': 0,

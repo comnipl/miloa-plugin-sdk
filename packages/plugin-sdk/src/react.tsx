@@ -43,7 +43,7 @@ function reportFrameError(error: unknown): void {
   try {
     window.parent.postMessage(message, '*');
   } catch {
-    // frame が切り離された後は window.parent が null になり、通知先が無い
+    // After the frame is detached, window.parent is null and there is nowhere to notify
   }
 }
 
@@ -51,7 +51,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-/** クラッシュをエラー表示に変換しつつ、watchdog と同じ経路でホストにも通知する。 */
+/** Turns a crash into an error display and also notifies the host through the same path as the watchdog. */
 class PluginErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
 
@@ -130,16 +130,16 @@ function SettingsContentHeightReporter() {
 }
 
 export interface PluginDefinition {
-  /** view モードで描画されるコンポーネント。 */
+  /** Component rendered in view mode. */
   View: ComponentType;
-  /** settings モードで描画されるコンポーネント (manifest の `view.has_settings` 用)。 */
+  /** Component rendered in settings mode (for the manifest's `view.has_settings`). */
   Settings?: ComponentType;
 }
 
 /**
- * プラグインのエントリポイント。ハンドシェイク完了後に `#root` へ React root を
- * 作成し、mode に応じて View / Settings を描画する。バンドルのトップレベルで
- * 1 度だけ呼ぶこと。
+ * Plugin entry point. After the handshake completes, it creates a React root on `#root`
+ * and renders View or Settings depending on the mode. Call it once at the top level
+ * of the bundle.
  */
 export function definePlugin(definition: PluginDefinition): void {
   void bootstrap(definition);

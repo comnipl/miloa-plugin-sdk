@@ -3,15 +3,15 @@ import { useCallback } from 'react';
 import { useMiloaContext } from './provider';
 
 export interface PrintOptions {
-  /** 印刷対象のルート要素。既定は frame の `#root` (プラグインの描画結果全体)。 */
+  /** Root element to print. Defaults to the frame's `#root` (everything the plugin renders). */
   root?: HTMLElement | null;
-  /** 印刷ジョブの表題。PDF 保存時の既定ファイル名などに使われる。 */
+  /** Title of the print job. Used, for example, as the default file name when saving as PDF. */
   title?: string;
 }
 
 /**
- * frame の CSS はパッケージの style を inline した同一 origin のシートなので `cssRules` を
- * 読める。読めないシートが混ざっても印刷を諦めず、読める分だけ集める。
+ * The frame's CSS is a same-origin sheet with the package styles inlined, so `cssRules` is
+ * readable. If some sheets are unreadable, it still prints and collects the ones it can read.
  */
 function collectFrameCss(doc: Document): string {
   const chunks: string[] = [];
@@ -27,7 +27,7 @@ function collectFrameCss(doc: Document): string {
   return chunks.join('\n');
 }
 
-/** live property が属性に反映されない要素。serialize 前に書き戻す対象。 */
+/** Elements whose live properties are not reflected in attributes. These are written back before serializing. */
 const LIVE_STATE_SELECTOR = 'input, textarea, option';
 
 function elementsToMaterialize(root: Element): Element[] {
@@ -36,8 +36,8 @@ function elementsToMaterialize(root: Element): Element[] {
 }
 
 /**
- * `outerHTML` は `input.value` / `checked` / `option.selected` / `textarea.value`
- * といった live property を落とすため、そのまま直列化すると画面の状態と紙面がずれる。
+ * `outerHTML` drops live properties such as `input.value` / `checked` / `option.selected` / `textarea.value`,
+ * so serializing it as is makes the printed page differ from what the screen shows.
  */
 function materializeLiveState(source: Element, clone: Element): void {
   const originals = elementsToMaterialize(source);
@@ -65,15 +65,15 @@ function serializeForPrint(root: HTMLElement): string {
 }
 
 /**
- * ホストの印刷ダイアログを開く関数を返す。要 scope: `ui:print`。
+ * Returns a function that opens the host's print dialog. Requires scope: `ui:print`.
  *
- * frame 自身は `window.print()` を呼べない (sandbox) ため、描画結果の HTML と CSS を
- * ホストへ渡し、ホストが印刷専用ドキュメントを組み立てて印刷する。プラグインの
- * `@media print` / `@page` はそのまま効き、改ページも意図どおり分割される。
+ * The frame itself cannot call `window.print()` (sandbox), so it passes the rendered HTML and CSS
+ * to the host, and the host builds a print-only document and prints it. The plugin's
+ * `@media print` / `@page` rules apply as is, and page breaks split pages as intended.
  *
- * ホストへ渡るのは呼び出し時点の DOM のスナップショットなので、画面表示と紙面が
- * 異なるなら印刷したい状態を先に描画してから呼ぶこと。`useOpenEntry` と同じく
- * 失敗は console に出すだけで throw しない。
+ * The host receives a snapshot of the DOM at call time, so if the printed page should differ
+ * from the screen, render the state you want to print first and then call it. Like `useOpenEntry`,
+ * it only logs failures to the console and does not throw.
  */
 export function usePrint(): (options?: PrintOptions) => void {
   const { client } = useMiloaContext();

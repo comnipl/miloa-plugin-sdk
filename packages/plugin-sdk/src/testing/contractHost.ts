@@ -37,9 +37,9 @@ export interface ContractHostData {
 
 export interface ContractHostOptions {
   readonly data: ContractHostData;
-  /** 既定は view モード、light、すべての API scope を許可、ネットワークなし。 */
+  /** Defaults to view mode, light, all API scopes allowed, and no network. */
   readonly init?: Partial<InitPayload>;
-  /** 1 ページの最大件数。既定は `ENTRY_SEARCH_PAGE_SIZE`。ページングを試すときに小さくする。 */
+  /** Maximum entries per page. Defaults to `ENTRY_SEARCH_PAGE_SIZE`. Make it small to test paging. */
   readonly pageSize?: number;
 }
 
@@ -49,9 +49,9 @@ export interface RecordedCall {
 }
 
 export interface ContractHost {
-  /** `<MiloaProvider client={...}>` に渡す。 */
+  /** Pass to `<MiloaProvider client={...}>`. */
   readonly client: PluginClient;
-  /** 届いた request の全件。拒んだものも含め、届いた順。 */
+  /** Every request that arrived, including rejected ones, in arrival order. */
   readonly calls: readonly RecordedCall[];
   emit<E extends PluginHostEventName>(name: E, payload: PluginHostEventPayloads[E]): void;
 }

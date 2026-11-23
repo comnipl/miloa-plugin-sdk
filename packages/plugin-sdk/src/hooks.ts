@@ -31,16 +31,16 @@ export interface MiloaInfo {
   pluginId: string;
   viewId: string | null;
   mode: PluginFrameMode;
-  /** View に保存されたプラグイン設定。config_changed イベントで更新される。 */
+  /** Plugin settings saved on the view. Updated by the config_changed event. */
   config: unknown;
   baseFilter: FilterNode | null;
   baseSort: EntrySort | null;
-  /** 現在のテーマ。theme_changed イベントで更新される。 */
+  /** Current theme. Updated by the theme_changed event. */
   theme: PluginTheme;
   permissions: GrantedPermissions;
 }
 
-/** frame の初期化情報と、テーマ・設定の現在値を返す。 */
+/** Returns the frame's init data and the current theme and settings. */
 export function useMiloa(): MiloaInfo {
   const { client, theme, config } = useMiloaContext();
   const { plugin_id: pluginId, view_id: viewId, mode, base_filter: baseFilter, base_sort: baseSort, granted_permissions: grantedPermissions } = client.init;
@@ -77,7 +77,7 @@ export type UseWatchResult =
 const INACTIVE_WATCH = { status: 'inactive', error: null } as const;
 const REGISTERING_WATCH = { status: 'registering', error: null } as const;
 
-/** `spec` が null の間は登録しない。`spec.tag_ids` が null なら全エントリを待ち受ける。 */
+/** Does not register while `spec` is null. When `spec.tag_ids` is null, watches all entries. */
 export function useWatch(
   spec: WatchSpec | null,
   onChange: (entryIds: readonly string[] | null) => void,
@@ -227,7 +227,7 @@ function searchWatch(filter: FilterNode | undefined): LiveSubscription {
 }
 
 export interface UseEntryCountsResult {
-  /** 現在の引数で最後に読んだ件数。未取得なら null。 */
+  /** Counts last read for the current arguments. null when not fetched yet. */
   counts: EntryCounts | null;
   loading: boolean;
   refreshing: boolean;
@@ -236,9 +236,9 @@ export interface UseEntryCountsResult {
 }
 
 /**
- * エントリの総件数とタグごとの件数 (`entries.counts`)。
- * params の変更 (JSON 比較) と待ち受けの通知で再取得する。`live: false` で待ち受けを止める。
- * `params` が null か `opts.enabled` が false の間は取得せず、`counts` を null に戻す。要 scope: `entries:read`。
+ * Total entry count and per-tag counts (`entries.counts`).
+ * Refetches when params change (compared as JSON) and when the watch notifies. `live: false` stops watching.
+ * While `params` is null or `opts.enabled` is false, it does not fetch and resets `counts` to null. Requires scope: `entries:read`.
  */
 export function useEntryCounts(
   params: CountEntries | null,
@@ -259,25 +259,25 @@ export function useEntryCounts(
 }
 
 export interface UseEntrySearchResult {
-  /** 現在の引数で最後に読んだページ。未取得なら null。件数 (`count: true`) は `page.count` にある。 */
+  /** Page last read for the current arguments. null when not fetched yet. The count (`count: true`) is in `page.count`. */
   page: EntryPage | null;
   entries: readonly Entry[];
-  /** 続きを読むときに `params.cursor` に渡す。null なら最後のページ。 */
+  /** Pass to `params.cursor` to read the next page. null on the last page. */
   nextCursor: string | null;
-  /** 現在の引数で最初の結果かエラーを待つ間は true。 */
+  /** true while waiting for the first result or error for the current arguments. */
   loading: boolean;
-  /** 同じ引数で結果かエラーを返したあとに読み直す間は true。その間も前の結果とエラーを返す。 */
+  /** true while reading again after returning a result or error for the same arguments. Meanwhile it still returns the previous result and error. */
   refreshing: boolean;
   error: Error | null;
   refetch: () => void;
 }
 
 /**
- * エントリ検索 (`entries.search`) の 1 ページ。`params.limit` を省くと
- * `ENTRY_SEARCH_PAGE_SIZE` 件まで取る。ページは件数が少なくても、0 件でも `nextCursor` を
- * 持ちうるので、続きの有無は `nextCursor` だけで判断する。一致する全件が要るなら `useAllEntries` を使う。
- * params の変更 (JSON 比較) と待ち受けの通知で再取得する。`live: false` で待ち受けを止める。
- * `params` が null か `opts.enabled` が false の間は取得せず、空の結果に戻す。要 scope: `entries:read`。
+ * One page of entry search (`entries.search`). When `params.limit` is omitted, it fetches
+ * up to `ENTRY_SEARCH_PAGE_SIZE` entries. A page can have few entries, or none, and still have a `nextCursor`,
+ * so use only `nextCursor` to decide whether more pages follow. To get every match, use `useAllEntries`.
+ * Refetches when params change (compared as JSON) and when the watch notifies. `live: false` stops watching.
+ * While `params` is null or `opts.enabled` is false, it does not fetch and resets to an empty result. Requires scope: `entries:read`.
  */
 export function useEntrySearch(
   params: SearchEntries | null,
@@ -314,15 +314,15 @@ export function useEntrySearch(
 }
 
 /**
- * `useAllEntries` の検索条件。`limit` / `cursor` は hook がページングに使い、`count` は受け取らない。
+ * Search criteria for `useAllEntries`. The hook uses `limit` / `cursor` for paging and does not accept `count`.
  */
 export type AllEntriesParams = Omit<SearchEntries, 'limit' | 'cursor' | 'count'>;
 
 export interface UseAllEntriesResult {
   entries: readonly Entry[];
-  /** 現在の引数で最初の結果かエラーを待つ間は true。 */
+  /** true while waiting for the first result or error for the current arguments. */
   loading: boolean;
-  /** 同じ引数で結果かエラーを返したあとに読み直す間は true。その間も前の結果とエラーを返す。 */
+  /** true while reading again after returning a result or error for the same arguments. Meanwhile it still returns the previous result and error. */
   refreshing: boolean;
   error: Error | null;
   refetch: () => void;
@@ -349,9 +349,9 @@ async function searchAllPages(
 }
 
 /**
- * 一致するエントリの全件を、`nextCursor` が null になるまでページを順に読んで返す。
- * 全ページが揃うまで、`entries` は現在の引数で最後に取得した全件を返す。未取得なら空になる。
- * 再取得の契機と `enabled` は `useEntrySearch` と同じ。要 scope: `entries:read`。
+ * Returns every matching entry by reading pages in order until `nextCursor` is null.
+ * Until all pages arrive, `entries` returns the full set last fetched for the current arguments, or is empty if none.
+ * Refetch triggers and `enabled` work the same as in `useEntrySearch`. Requires scope: `entries:read`.
  */
 export function useAllEntries(
   params: AllEntriesParams | null,
@@ -376,18 +376,18 @@ export function useAllEntries(
 
 export interface UseEntryResult {
   entry: Entry | null;
-  /** 現在の引数で最初の結果かエラーを待つ間は true。 */
+  /** true while waiting for the first result or error for the current arguments. */
   loading: boolean;
-  /** 同じ引数で結果かエラーを返したあとに読み直す間は true。その間も前の結果とエラーを返す。 */
+  /** true while reading again after returning a result or error for the same arguments. Meanwhile it still returns the previous result and error. */
   refreshing: boolean;
   error: Error | null;
   refetch: () => void;
 }
 
 /**
- * エントリ 1 件の取得 (`entries.get`)。`id` が null の間は取得せず、null へ戻した
- * とき (選択解除など) は `entry: null` にリセットされる。既定で変更を待ち受ける。
- * 要 scope: `entries:read`。
+ * Fetches one entry (`entries.get`). While `id` is null it does not fetch, and when `id` goes back
+ * to null (for example, on deselect) it resets to `entry: null`. Watches for changes by default.
+ * Requires scope: `entries:read`.
  */
 export function useEntry(id: string | null, opts: { live?: boolean } = {}): UseEntryResult {
   const { client } = useMiloaContext();
@@ -403,17 +403,17 @@ export function useEntry(id: string | null, opts: { live?: boolean } = {}): UseE
 
 export interface UseTagsResult {
   tags: readonly Tag[];
-  /** 最初の結果かエラーを待つ間は true。 */
+  /** true while waiting for the first result or error. */
   loading: boolean;
-  /** 結果かエラーを返したあとに読み直す間は true。その間も前の結果とエラーを返す。 */
+  /** true while reading again after returning a result or error. Meanwhile it still returns the previous result and error. */
   refreshing: boolean;
   error: Error | null;
   refetch: () => void;
 }
 
 /**
- * タグ一覧 (`tags.list`)。`tags_changed` で自動再取得する。
- * `live: false` で自動再取得を止める。要 scope: `tags:read`。
+ * Tag list (`tags.list`). Refetches automatically on `tags_changed`.
+ * `live: false` stops the automatic refetch. Requires scope: `tags:read`.
  */
 export function useTags(opts: { live?: boolean } = {}): UseTagsResult {
   const { client } = useMiloaContext();
@@ -423,18 +423,18 @@ export function useTags(opts: { live?: boolean } = {}): UseTagsResult {
 }
 
 export interface EntryMutations {
-  /** エントリ作成。答えは `entries.get` が読むのと同じ形のエントリ。要 scope: `entries:write`。 */
+  /** Creates an entry. Resolves to the entry in the same shape that `entries.get` reads. Requires scope: `entries:write`. */
   create: (input: CreateEntry) => Promise<Entry>;
   /**
-   * タイトル、タグ、フィールドを revision なしで更新する。`add_tag_ids` と `remove_tag_ids` でタグを付け外しし、
-   * `field_values` の `null` は値を消す。答えの `revision` はこの更新が書いた版。要 scope: `entries:write`。
+   * Updates the title, tags, and fields without a revision. `add_tag_ids` and `remove_tag_ids` add and remove tags,
+   * and `null` in `field_values` clears the value. The resolved `revision` is the version this update wrote. Requires scope: `entries:write`.
    */
   update: (id: string, update: UpdateEntry) => Promise<EntryUpdate>;
-  /** 本文の revision が一致するときに本文を置き換える。要 scope: `entries:write`。 */
+  /** Replaces the body when the body revision matches. Requires scope: `entries:write`. */
   replaceBody: (id: string, input: ReplaceEntryBody) => Promise<EntryBodyUpdate>;
-  /** 順に置換し、全件が成功したときだけ本文を保存する。要 scope: `entries:write`。 */
+  /** Applies the replacements in order and saves the body only when all of them succeed. Requires scope: `entries:write`. */
   editBody: (id: string, input: EditEntryBody) => Promise<EntryBodyUpdate>;
-  /** エントリ削除。要 scope: `entries:write`。 */
+  /** Deletes an entry. Requires scope: `entries:write`. */
   remove: (id: string) => Promise<void>;
 }
 
@@ -453,7 +453,7 @@ export function useEntryMutations(): EntryMutations {
   );
 }
 
-/** ホストの右ペインでエントリを開く関数を返す。要 scope: `ui:navigate`。 */
+/** Returns a function that opens an entry in the host's right pane. Requires scope: `ui:navigate`. */
 export function useOpenEntry(): (entryId: string) => void {
   const { client } = useMiloaContext();
   return useCallback(
@@ -467,10 +467,10 @@ export function useOpenEntry(): (entryId: string) => void {
 }
 
 /**
- * settings モード用のドラフト設定。`setDraft` はローカル state の更新と同時に
- * `view.set_draft_config` でホストへ送る (ホストの保存ボタンがこれを View に保存する)。
- * ユーザーが設定 UI を一切触らずに保存してもホストがドラフトを持てるよう、
- * マウント時に初期値も 1 回送られる。
+ * Draft config for settings mode. `setDraft` updates local state and at the same time
+ * sends it to the host with `view.set_draft_config` (the host's save button saves it to the view).
+ * So that the host has a draft even when the user saves without touching the settings UI,
+ * the initial value is also sent once on mount.
  */
 export function useDraftConfig<T>(initial: T): [T, (next: T) => void] {
   const { client } = useMiloaContext();

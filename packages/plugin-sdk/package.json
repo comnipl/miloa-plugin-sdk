@@ -1,6 +1,6 @@
 {
   "name": "@comnipl/miloa-plugin-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SDK for building miloa view plugins that run inside a sandboxed iframe",
   "type": "module",
   "exports": {

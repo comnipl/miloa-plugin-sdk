@@ -1,8 +1,8 @@
 export const SETTINGS_LAYOUT_STYLE_ID = 'miloa-settings-layout';
 
 /**
- * settings モードでは view 用 CSS の `height: 100%` が iframe ビューポートを拾ってしまう。
- * これを無効化し、文書をコンテンツ高さに合わせる。
+ * In settings mode, the view CSS's `height: 100%` picks up the iframe viewport.
+ * This disables it and fits the document to the content height.
  */
 export function applySettingsLayoutStyles(doc: Document = document): void {
   if (doc.getElementById(SETTINGS_LAYOUT_STYLE_ID) != null) return;
@@ -20,10 +20,10 @@ export function applySettingsLayoutStyles(doc: Document = document): void {
 }
 
 /**
- * settings 文書のコンテンツ高さ。ホストへ報告し、そのまま settings iframe の高さになる値。
+ * Content height of the settings document. Reported to the host, and used as is as the settings iframe height.
  *
- * `#root` の子要素の border box 下端から求める。`#root` / `documentElement` の
- * scrollHeight は iframe ビューポートを下限に含むことがあり、縮小が伝播しない。
+ * Computed from the bottom of the border boxes of `#root`'s children. The scrollHeight of `#root` / `documentElement`
+ * can include the iframe viewport as a lower bound, so shrinking does not propagate.
  */
 export function measureSettingsContentHeight(doc: Document = document): number {
   const root = doc.getElementById('root');

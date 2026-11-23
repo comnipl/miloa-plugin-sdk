@@ -12,8 +12,8 @@ interface MiloaContextValue {
 const MiloaContext = createContext<MiloaContextValue | null>(null);
 
 /**
- * SDK hooks に {@link PluginClient} を供給する Provider。definePlugin が自動で
- * セットアップするので、プラグイン作者が直接使うのはテストハーネスくらい。
+ * Provider that supplies a {@link PluginClient} to the SDK hooks. definePlugin sets it up
+ * automatically, so plugin authors use it directly only in test harnesses and the like.
  */
 export function MiloaProvider({
   client,
@@ -29,14 +29,14 @@ export function MiloaProvider({
   useEffect(
     () =>
       client.on('config_changed', (payload) => {
-        // ホスト/SDK のバージョン乖離で payload が想定外の形でも TypeError で落とさない
+        // Do not throw a TypeError when a host/SDK version mismatch gives the payload an unexpected shape
         if (!isRecord(payload)) return;
         setConfig(payload.config);
       }),
     [client],
   );
 
-  // app 本体と同じ class 規約 (documentElement の 'dark') でテーマを反映する
+  // Apply the theme with the same class convention as the app ('dark' on documentElement)
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);

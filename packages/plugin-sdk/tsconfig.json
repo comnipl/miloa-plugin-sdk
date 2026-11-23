@@ -6,7 +6,7 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode (exports は src の .ts/.tsx を直接指すため、消費側のバンドラ/tsc がソースを読む) */
+    /* Bundler mode (exports point directly at the .ts/.tsx in src, so the consumer's bundler/tsc reads the source) */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
