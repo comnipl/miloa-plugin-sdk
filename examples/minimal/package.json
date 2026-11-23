@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@comnipl/miloa-plugin-sdk": "^0.1.0",
+    "@comnipl/miloa-plugin-sdk": "^0.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
