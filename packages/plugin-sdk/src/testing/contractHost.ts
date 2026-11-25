@@ -6,6 +6,7 @@ import {
   PLUGIN_API_SCOPES,
   PROTOCOL_VERSION,
   RPC_ERROR_CODES,
+  type ArchivedEntries,
   type BodyEdit,
   type CountEntries,
   type CreateEntry,
@@ -71,14 +72,14 @@ const replaceBodyKeys: ParamKeys<ReplaceEntryBodyParams> = { id: true, body: tru
 const editBodyKeys: ParamKeys<EditEntryBodyParams> = { id: true, edits: true };
 const bodyEditKeys: ParamKeys<BodyEdit> = { old: true, new: true };
 const searchKeys: ParamKeys<SearchEntries> = {
-  filter: true, sort: true, include_deleted: true, limit: true, cursor: true, count: true,
+  filter: true, sort: true, include_deleted: true, archived: true, limit: true, cursor: true, count: true,
 };
-const countKeys: ParamKeys<CountEntries> = { filter: true };
+const countKeys: ParamKeys<CountEntries> = { filter: true, archived: true };
 const createKeys: ParamKeys<CreateEntry> = {
   title: true, body: true, tag_ids: true, field_values: true, time_zone: true,
 };
 const updateKeys: ParamKeys<UpdateEntry> = {
-  title: true, add_tag_ids: true, remove_tag_ids: true, field_values: true, time_zone: true,
+  title: true, add_tag_ids: true, remove_tag_ids: true, field_values: true, time_zone: true, archived: true,
 };
 
 type ParamKeys<T> = Readonly<Record<keyof T, true>>;
@@ -112,7 +113,12 @@ function editTags(tagIds: readonly string[], { add_tag_ids = [], remove_tag_ids 
   return [...tags];
 }
 
-/** Answers RPCs with fixture data. Search and count do not evaluate filters or sort orders. */
+function matchesArchive(entry: Entry, archived: ArchivedEntries = 'exclude'): boolean {
+  const isArchived = entry.archived_at != null;
+  return archived === 'include' || isArchived === (archived === 'only');
+}
+
+/** Answers RPCs with fixture data. Search and count apply `archived` and ignore filters and sort orders. */
 export function createContractHost(options: ContractHostOptions): ContractHost {
   const { tags } = options.data;
   const entries = new Map<string, Entry>();
@@ -169,7 +175,7 @@ export function createContractHost(options: ContractHostOptions): ContractHost {
 
   function search(params: unknown): EntryPage {
     const request = readParams<SearchEntries>(searchKeys, 'entries.search', params ?? {});
-    const all = [...entries.values()];
+    const all = [...entries.values()].filter(entry => matchesArchive(entry, request.archived));
     const offset = request.cursor === undefined ? 0 : Number(request.cursor);
     if (!Number.isSafeInteger(offset) || offset < 0) throw apiError('cursor_mismatch');
     const end = offset + Math.min(request.limit ?? pageSize, pageSize);
@@ -181,13 +187,14 @@ export function createContractHost(options: ContractHostOptions): ContractHost {
   }
 
   function counts(params: unknown): EntryCounts {
-    readParams<CountEntries>(countKeys, 'entries.counts', params ?? {});
+    const request = readParams<CountEntries>(countKeys, 'entries.counts', params ?? {});
+    const matches = [...entries.values()].filter(entry => matchesArchive(entry, request.archived));
     const perTag = new Map<string, number>();
-    for (const { tag_ids: tagIds } of entries.values()) {
+    for (const { tag_ids: tagIds } of matches) {
       for (const tagId of tagIds) perTag.set(tagId, (perTag.get(tagId) ?? 0) + 1);
     }
     return {
-      total: entries.size,
+      total: matches.length,
       tags: [...perTag].map(([tagId, count]) => ({ tag_id: tagId, count })),
     };
   }
@@ -212,6 +219,7 @@ export function createContractHost(options: ContractHostOptions): ContractHost {
       created_at: at,
       updated_at: at,
       deleted_at: null,
+      archived_at: null,
       revision: mintRevision(),
     };
     entries.set(entry.id, entry);
@@ -229,14 +237,16 @@ export function createContractHost(options: ContractHostOptions): ContractHost {
       else fieldValues[fieldId] = value;
     }
     const revision = mintRevision();
+    const now = Date.now();
     const next: Entry = {
       ...entry,
       title: change.title ?? entry.title,
       tag_ids: editTags(entry.tag_ids, change),
       attached_tag_ids: editTags(entry.attached_tag_ids ?? entry.tag_ids, change),
       field_values: fieldValues,
+      ...(change.archived === undefined ? {} : { archived_at: change.archived ? entry.archived_at ?? new Date(now).toISOString() : null }),
       updated_by: HOST_USER,
-      updated_at: new Date(Math.max(Date.now(), Date.parse(entry.updated_at) + 1)).toISOString(),
+      updated_at: new Date(Math.max(now, Date.parse(entry.updated_at) + 1)).toISOString(),
       revision,
     };
     entries.set(id, next);

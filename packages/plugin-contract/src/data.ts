@@ -46,6 +46,8 @@ export interface Entry {
   readonly created_at: string;
   readonly updated_at: string;
   readonly deleted_at: string | null;
+  /** Null unless the entry is archived. */
+  readonly archived_at?: string | null;
   /** An opaque identifier for this entry state. Compare it only for equality. */
   readonly revision: string;
 }
@@ -62,7 +64,7 @@ export type FilterNode =
   | { readonly kind: 'item'; readonly operator: CompareOperator; readonly value: FieldValue }
   | { readonly kind: 'title'; readonly operator: CompareOperator; readonly value: string };
 
-export type SortKey = 'created_at' | 'updated_at' | 'title' | { readonly field_id: string };
+export type SortKey = 'created_at' | 'updated_at' | 'title' | 'archived_at' | { readonly field_id: string };
 export type SortOrder = 'asc' | 'desc';
 
 export interface EntrySort {
@@ -70,10 +72,14 @@ export interface EntrySort {
   readonly order: SortOrder;
 }
 
+/** `exclude` (the default) leaves out archived entries, `include` adds them, and `only` matches only archived entries. Deleted entries follow `include_deleted`. */
+export type ArchivedEntries = 'exclude' | 'include' | 'only';
+
 export interface SearchEntries {
   readonly filter?: FilterNode;
   readonly sort?: EntrySort;
   readonly include_deleted?: boolean;
+  readonly archived?: ArchivedEntries;
   readonly limit?: number;
   /** Use the previous page's next_cursor to continue. */
   readonly cursor?: string;
@@ -90,6 +96,7 @@ export interface EntryPage {
 
 export interface CountEntries {
   readonly filter?: FilterNode;
+  readonly archived?: ArchivedEntries;
 }
 
 export interface EntryCounts {
@@ -106,7 +113,7 @@ export interface CreateEntry {
   readonly time_zone?: string;
 }
 
-/** Changes the supplied title, attached tags and fields. Omitted keys keep their values. */
+/** Changes the supplied title, attached tags, fields and archive status. Omitted keys keep their values. */
 export interface UpdateEntry {
   readonly title?: string;
   readonly add_tag_ids?: readonly string[];
@@ -114,6 +121,8 @@ export interface UpdateEntry {
   /** A null value clears the field. */
   readonly field_values?: Readonly<Record<string, FieldValue | null>>;
   readonly time_zone?: string;
+  /** True archives the entry. False restores it. */
+  readonly archived?: boolean;
 }
 
 export interface EntryUpdate {
